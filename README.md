@@ -26,3 +26,9 @@ JSON output:
 ```bash
 python3 field_spider.py https://example.com --json
 ```
+
+Banner options:
+```bash
+python3 field_spider.py https://example.com --banner-file ./my_banner.txt
+python3 field_spider.py https://example.com --banner-text "FIELDSPIDER\n========="
+```

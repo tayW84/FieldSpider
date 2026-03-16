@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import xml.etree.ElementTree as ET
 from collections import deque
@@ -24,12 +25,29 @@ from urllib.request import Request, urlopen
 
 USER_AGENT = "FieldSpider/1.0 (+passive-surface-mapper)"
 
+COLOR_TEXT_FIELD = "\033[96m"
+COLOR_FILE_FIELD = "\033[95m"
+COLOR_RESET = "\033[0m"
+
 # Optional built-in banner slot.
-# Paste your own ASCII art between the triple quotes if you want a default banner.
+# Paste your own ASCII art between these triple quotes for a default banner.
+# Example:
+# CUSTOM_BANNER = r"""
+#  ______ _      _     _ ____        _     _
+# |  ____(_)    | |   | / __ \      | |   | |
+# | |__   _  ___| | __| | |  | |_ __ | | __| |
+# |  __| | |/ _ \ |/ _` | |  | | '_ \| |/ _` |
+# | |    | |  __/ | (_| | |__| | |_) | | (_| |
+# |_|    |_|\___|_|\__,_|\____/| .__/|_|\__,_|
+#                                | |
+#                                |_|
+# """
 CUSTOM_BANNER = r""""""
 
 
-def resolve_banner_text(banner_file: Optional[str]) -> str:
+def resolve_banner_text(banner_file: Optional[str], banner_text: Optional[str]) -> str:
+    if banner_text:
+        return banner_text.encode("utf-8").decode("unicode_escape").rstrip("\n")
     if banner_file:
         banner_text = fetch_text(banner_file, timeout=10) if banner_file.startswith(("http://", "https://")) else None
         if banner_text is None:
@@ -40,6 +58,18 @@ def resolve_banner_text(banner_file: Optional[str]) -> str:
                 return ""
         return banner_text.rstrip("\n")
     return CUSTOM_BANNER.strip("\n")
+
+
+def supports_color() -> bool:
+    if os.environ.get("NO_COLOR"):
+        return False
+    return sys.stdout.isatty()
+
+
+def colorize(label: str, color_code: str) -> str:
+    if not supports_color():
+        return label
+    return f"{color_code}{label}{COLOR_RESET}"
 
 
 @dataclass
@@ -234,7 +264,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--json", action="store_true", help="Output results in JSON")
     parser.add_argument(
         "--banner-file",
-        help="Optional path to a text file containing ASCII art banner to print before results",
+        help="Optional path/URL to a text file containing an ASCII art banner to print before results",
+    )
+    parser.add_argument(
+        "--banner-text",
+        help="Inline ASCII banner text (supports escaped newlines like \\n)",
     )
     return parser.parse_args()
 
@@ -251,7 +285,7 @@ def main() -> int:
     if args.json:
         print(json.dumps([asdict(f) for f in findings], indent=2))
     else:
-        banner_text = resolve_banner_text(args.banner_file)
+        banner_text = resolve_banner_text(args.banner_file, args.banner_text)
         if banner_text:
             print(banner_text)
         print(f"FieldSpider results for: {start}")
@@ -262,10 +296,12 @@ def main() -> int:
             print(f"    Action: {finding.form_action}")
             print(f"    Method: {finding.form_method}")
             print(f"    EncType: {finding.enctype}")
-            print(f"    Text fields: {', '.join(finding.text_fields) if finding.text_fields else '-'}")
+            text_label = colorize("Text fields", COLOR_TEXT_FIELD)
+            file_label = colorize("File fields", COLOR_FILE_FIELD)
+            print(f"    {text_label}: {', '.join(finding.text_fields) if finding.text_fields else '-'}")
             print(f"    Textareas: {', '.join(finding.textarea_fields) if finding.textarea_fields else '-'}")
             print(f"    Password fields: {', '.join(finding.password_fields) if finding.password_fields else '-'}")
-            print(f"    File fields: {', '.join(finding.file_fields) if finding.file_fields else '-'}")
+            print(f"    {file_label}: {', '.join(finding.file_fields) if finding.file_fields else '-'}")
             print(f"    CSRF token heuristic: {'present' if finding.has_csrf_token else 'not detected'}")
             if finding.risk_notes:
                 print("    Notes:")
