@@ -1,5 +1,7 @@
 # FieldSpider
 
+![FieldSpider Logo](logo.png)
+
 FieldSpider is a **passive** Python crawler that maps text fields and file upload opportunities on a target site so authorized testers can prioritize manual review.
 
 ## What it does
