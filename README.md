@@ -26,10 +26,3 @@ JSON output:
 ```bash
 python3 field_spider.py https://example.com --json
 ```
-
-Custom banner (optional):
-```bash
-python3 field_spider.py https://example.com --banner-file ./my_banner.txt
-```
-
-You can also set a built-in default banner by editing `CUSTOM_BANNER` in `field_spider.py`.
