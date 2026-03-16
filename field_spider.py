@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import xml.etree.ElementTree as ET
 from collections import deque
@@ -23,6 +24,10 @@ from urllib.request import Request, urlopen
 
 
 USER_AGENT = "FieldSpider/1.0 (+passive-surface-mapper)"
+
+COLOR_TEXT_FIELD = "\033[96m"
+COLOR_FILE_FIELD = "\033[95m"
+COLOR_RESET = "\033[0m"
 
 # Optional built-in banner slot.
 # Paste your own ASCII art between the triple quotes if you want a default banner.
@@ -40,6 +45,18 @@ def resolve_banner_text(banner_file: Optional[str]) -> str:
                 return ""
         return banner_text.rstrip("\n")
     return CUSTOM_BANNER.strip("\n")
+
+
+def supports_color() -> bool:
+    if os.environ.get("NO_COLOR"):
+        return False
+    return sys.stdout.isatty()
+
+
+def colorize(label: str, color_code: str) -> str:
+    if not supports_color():
+        return label
+    return f"{color_code}{label}{COLOR_RESET}"
 
 
 @dataclass
@@ -262,10 +279,12 @@ def main() -> int:
             print(f"    Action: {finding.form_action}")
             print(f"    Method: {finding.form_method}")
             print(f"    EncType: {finding.enctype}")
-            print(f"    Text fields: {', '.join(finding.text_fields) if finding.text_fields else '-'}")
+            text_label = colorize("Text fields", COLOR_TEXT_FIELD)
+            file_label = colorize("File fields", COLOR_FILE_FIELD)
+            print(f"    {text_label}: {', '.join(finding.text_fields) if finding.text_fields else '-'}")
             print(f"    Textareas: {', '.join(finding.textarea_fields) if finding.textarea_fields else '-'}")
             print(f"    Password fields: {', '.join(finding.password_fields) if finding.password_fields else '-'}")
-            print(f"    File fields: {', '.join(finding.file_fields) if finding.file_fields else '-'}")
+            print(f"    {file_label}: {', '.join(finding.file_fields) if finding.file_fields else '-'}")
             print(f"    CSRF token heuristic: {'present' if finding.has_csrf_token else 'not detected'}")
             if finding.risk_notes:
                 print("    Notes:")
