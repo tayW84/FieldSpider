@@ -24,6 +24,24 @@ from urllib.request import Request, urlopen
 
 USER_AGENT = "FieldSpider/1.0 (+passive-surface-mapper)"
 
+# Optional built-in banner slot.
+# Paste your own ASCII art between the triple quotes if you want a default banner.
+CUSTOM_BANNER = r""""""
+
+
+def resolve_banner_text(banner_file: Optional[str]) -> str:
+    if banner_file:
+        banner_text = fetch_text(banner_file, timeout=10) if banner_file.startswith(("http://", "https://")) else None
+        if banner_text is None:
+            try:
+                with open(banner_file, "r", encoding="utf-8") as handle:
+                    return handle.read().rstrip("\n")
+            except OSError:
+                return ""
+        return banner_text.rstrip("\n")
+    return CUSTOM_BANNER.strip("\n")
+
+
 @dataclass
 class FormFinding:
     page_url: str
@@ -214,6 +232,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-pages", type=int, default=25, help="Maximum pages to crawl on same host")
     parser.add_argument("--timeout", type=int, default=10, help="HTTP timeout in seconds")
     parser.add_argument("--json", action="store_true", help="Output results in JSON")
+    parser.add_argument(
+        "--banner-file",
+        help="Optional path to a text file containing ASCII art banner to print before results",
+    )
     return parser.parse_args()
 
 
@@ -229,6 +251,9 @@ def main() -> int:
     if args.json:
         print(json.dumps([asdict(f) for f in findings], indent=2))
     else:
+        banner_text = resolve_banner_text(args.banner_file)
+        if banner_text:
+            print(banner_text)
         print(f"FieldSpider results for: {start}")
         print(f"Forms discovered: {len(findings)}")
         for i, finding in enumerate(findings, start=1):
