@@ -6,6 +6,8 @@ FieldSpider is a **passive** Python crawler that maps text fields and file uploa
 
 ## What it does
 - Crawls pages on the same host as your starting URL.
+- Tries to discover additional same-host pages from `/sitemap.xml`.
+- Follows same-host form `action` URLs to reach pages that may contain additional fields.
 - Finds HTML forms and extracts:
   - text-like input fields
   - password fields
@@ -24,3 +26,10 @@ JSON output:
 ```bash
 python3 field_spider.py https://example.com --json
 ```
+
+Custom banner (optional):
+```bash
+python3 field_spider.py https://example.com --banner-file ./my_banner.txt
+```
+
+You can also set a built-in default banner by editing `CUSTOM_BANNER` in `field_spider.py`.
