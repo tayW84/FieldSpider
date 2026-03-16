@@ -23,6 +23,31 @@ from urllib.request import Request, urlopen
 
 USER_AGENT = "FieldSpider/1.0 (+passive-surface-mapper)"
 
+ANSI_RESET = "\033[0m"
+ANSI_BOLD = "\033[1m"
+ANSI_CYAN = "\033[96m"
+ANSI_MAGENTA = "\033[95m"
+
+
+def colorize(text: str, color_code: str) -> str:
+    return f"{color_code}{ANSI_BOLD}{text}{ANSI_RESET}"
+
+
+def print_spider_banner() -> None:
+    print(
+        r"""
+          .-.      _
+         (o o)   .' )
+     ___ / V \__/  /    FieldSpider says hi!
+    /   \  ^     _/     _
+   / /\ /| |\   (     _( )_
+  /_/  V |_| \___\   (_  _  )
+      /_____/          (_)  _)
+       /_/\_\          / _ (      🏕️
+                      (_( )_)
+        """
+    )
+
 
 @dataclass
 class FormFinding:
@@ -191,18 +216,21 @@ def main() -> int:
     if args.json:
         print(json.dumps([asdict(f) for f in findings], indent=2))
     else:
+        print_spider_banner()
         print(f"FieldSpider results for: {start}")
         print(f"Forms discovered: {len(findings)}")
+        text_label = colorize("Text fields", ANSI_CYAN)
+        file_label = colorize("File fields", ANSI_MAGENTA)
         for i, finding in enumerate(findings, start=1):
             print("\n" + "=" * 80)
             print(f"[{i}] Page: {finding.page_url}")
             print(f"    Action: {finding.form_action}")
             print(f"    Method: {finding.form_method}")
             print(f"    EncType: {finding.enctype}")
-            print(f"    Text fields: {', '.join(finding.text_fields) if finding.text_fields else '-'}")
+            print(f"    {text_label}: {', '.join(finding.text_fields) if finding.text_fields else '-'}")
             print(f"    Textareas: {', '.join(finding.textarea_fields) if finding.textarea_fields else '-'}")
             print(f"    Password fields: {', '.join(finding.password_fields) if finding.password_fields else '-'}")
-            print(f"    File fields: {', '.join(finding.file_fields) if finding.file_fields else '-'}")
+            print(f"    {file_label}: {', '.join(finding.file_fields) if finding.file_fields else '-'}")
             print(f"    CSRF token heuristic: {'present' if finding.has_csrf_token else 'not detected'}")
             if finding.risk_notes:
                 print("    Notes:")
